@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <!-- ======================================
+         بخش HEAD: تنظیمات اولیه و کتابخانه‌ها
+    ====================================== -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحلیل نرم افزار تعمیرات و نگهداری</title>
+    
+    <!-- فونت فارسی برای پشتیبانی از زبان فارسی -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- آیکون‌های Font Awesome برای استفاده در تمام بخش‌ها -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- کتابخانه Chart.js برای نمودارهای داشبورد -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- ======================================
+         بخش CSS: استایل‌های ظاهری و ریسپانسیو
+    ====================================== -->
+    <style>
+        /* ======================================
+           تنظیمات کلی و فونت‌ها
+        ====================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        /* ======================================
+           هدر ثابت بالای صفحه
+        ====================================== */
+        .header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 70px;
+            background: linear-gradient(135deg, #0d47a1, #1976d2);
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        /* ======================================
+           لوگو و نام کاربر در هدر
+        ====================================== */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            padding: 5px;
+            animation: pulse 2s infinite;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover {
+            transform: scale(1.1);
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
+        
+        .user-name {
+            margin-right: 15px;
+            font-weight: 500;
+            font-size: 18px;
+        }
+        
+        /* ======================================
+           عنوان اصلی در هدر
+        ====================================== */
+        .main-title {
+            font-size: 24px;
+            font-weight: 700;
+            flex-grow: 1;
+            text-align: center;
+        }
+        
+        /* ======================================
+           دکمه منوی موبایل (همبرگری)
+        ====================================== */
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        /* ======================================
+           کانتینر اصلی برای چیدمان صفحه
+        ====================================== */
+        .container {
+            display: flex;
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+        }
+        
+        /* ======================================
+           سایدبار (منوی اصلی)
+        ====================================== */
+        .sidebar {
+            width: 320px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            overflow-x: auto;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        /* ======================================
+           حالت فشرده سایدبار
+        ====================================== */
+        .sidebar.compact {
+            width: 70px;
+        }
+        
+        .sidebar.compact .menu-text,
+        .sidebar.compact .menu-counter,
+        .sidebar.compact .submenu-arrow {
+            display: none;
+        }
+        
+        .sidebar.compact .submenu {
+            display: none;
+        }
+        
+        .sidebar.compact .menu-item {
+            justify-content: center;
+        }
+        
+        /* ======================================
+           هدر سایدبار: جستجو و دکمه فشرده
+        ====================================== */
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .search-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        }
+        
+        .compact-toggle {
+            background: none;
+            border: none;
+            color: #1976d2;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .compact-toggle:hover {
+            background: #e3f2fd;
+        }
+        
+        /* ======================================
+           اسکرول بار سفارشی برای سایدبار
+        ====================================== */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #1976d2;
+            border-radius: 3px;
+        }
+        
+        /* ======================================
+           آیتم‌های منوی اصلی
+        ====================================== */
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .menu-item:hover {
+            background: #e3f2fd;
+        }
+        
+        .menu-item.active {
+            background: #1976d2;
+            color: white;
+        }
+        
+        .menu-item i {
+            font-size: 18px;
+            margin-left: 15px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .menu-text {
+            flex-grow: 1;
+            font-weight: 500;
+        }
+        
+        .menu-counter {
+            background: #1976d2;
+            color: white;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+        
+        .menu-item.active .menu-counter {
+            background: white;
+            color: #1976d2;
+        }
+        
+        .submenu-arrow {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+        
+        .menu-item.has-submenu.active .submenu-arrow {
+            transform: rotate(90deg);
+        }
+        
+        /* ======================================
+           زیرمنوها
+        ====================================== */
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .submenu.show {
+            max-height: 2000px;
+        }
+        
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px 12px 55px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .submenu-item:hover {
+            background: #e3f2fd;
+            padding-right: 60px;
+        }
+        
+        .submenu-item.active {
+            background: #1976d2;
+            color: white;
+        }
+        
+        .submenu-item i {
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        /* ======================================
+           زیرمنوهای تو در تو (سطح دوم)
+        ====================================== */
+        .nested-submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #fff;
+        }
+        
+        .nested-submenu.show {
+            max-height: 1000px;
+        }
+        
+        .nested-submenu .submenu-item {
+            padding-right: 75px;
+            font-size: 14px;
+        }
+        
+        .nested-submenu .submenu-item:hover {
+            padding-right: 80px;
+        }
+        
+        /* ======================================
+           محتوای اصلی صفحه
+        ====================================== */
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+            transition: margin-right 0.3s ease;
+        }
+        
+        .container.compact-sidebar .main-content {
+            margin-right: -250px;
+        }
+        
+        /* ======================================
+           کارت‌های محتوا
+        ====================================== */
+        .content-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .content-title {
+            font-size: 28px;
+            color: #0d47a1;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        
+        .content-description {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        
+        /* ======================================
+           کارت‌های اطلاعاتی معمولی
+        ====================================== */
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .info-card {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(25, 118, 210, 0.2);
+        }
+        
+        .info-card i {
+            font-size: 40px;
+            color: #0d47a1;
+            margin-bottom: 15px;
+        }
+        
+        .info-card h3 {
+            color: #0d47a1;
+            margin-bottom: 10px;
+        }
+        
+        .info-card p {
+            color: #555;
+            font-size: 14px;
+        }
+        
+        /* ======================================
+           استایل‌های ویژه ویژگی‌های فنی
+        ====================================== */
+        .feature-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .priority-1 {
+            border-left-color: #ffd700; /* طلایی */
+        }
+        
+        .priority-2 {
+            border-left-color: #c0c0c0; /* نقره‌ای */
+        }
+        
+        .priority-3 {
+            border-left-color: #cd7f32; /* برنزی */
+        }
+        
+        .priority-4 {
+            border-left-color: #007bff; /* آبی */
+        }
+        
+        .priority-5 {
+            border-left-color: #6c757d; /* خاکستری */
+        }
+        
+        .feature-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .feature-number {
+            background: linear-gradient(135deg, #0d47a1, #1976d2);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-left: 15px;
+            font-size: 14px;
+        }
+        
+        .feature-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0d47a1;
+            flex-grow: 1;
+        }
+        
+        .feature-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .feature-details {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .feature-details ul {
+            list-style: none;
+            padding-right: 0;
+        }
+        
+        .feature-details li {
+            padding: 8px 0;
+            padding-right: 25px;
+            position: relative;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .feature-details li:before {
+            content: "▶";
+            position: absolute;
+            right: 0;
+            color: #1976d2;
+            font-size: 12px;
+        }
+        
+        .priority-badge {
+            background: linear-gradient(135deg, #0d47a1, #1976d2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        /* ======================================
+           استایل‌های داشبورد مدیریتی
+        ====================================== */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #1976d2, #0d47a1);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .summary-icon {
+            font-size: 30px;
+            margin-left: 15px;
+        }
+        
+        .summary-content h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+        
+        .summary-number {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .dashboard-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .dashboard-card h3 {
+            color: #0d47a1;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        /* ======================================
+           استایل‌های ریسپانسیو
+        ====================================== */
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 70px;
+                right: 0;
+                height: calc(100vh - 70px);
+                z-index: 999;
+                transform: translateX(100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                padding: 20px 15px;
+            }
+            
+            .main-title {
+                font-size: 18px;
+            }
+            
+            .user-name {
+                display: none;
+            }
+            
+            .info-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar.compact {
+                width: 320px;
+            }
+            
+            .container.compact-sidebar .main-content {
+                margin-right: 0;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ======================================
+           حالت تیره (اختیاری)
+        ====================================== */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #0d47a1, #0d47a1);
+            }
+            
+            .sidebar {
+                background: #2d2d2d;
+                color: #e0e0e0;
+            }
+            
+            .menu-item:hover {
+                background: #37474f;
+            }
+            
+            .submenu {
+                background: #37474f;
+            }
+            
+            .submenu-item:hover {
+                background: #455a64;
+            }
+            
+            .content-card {
+                background: #2d2d2d;
+            }
+            
+            .content-title {
+                color: #90caf9;
+                border-bottom-color: #37474f;
+            }
+            
+            .info-card {
+                background: linear-gradient(135deg, #37474f, #455a64);
+            }
+            
+            .search-input {
+                background: #37474f;
+                border-color: #455a64;
+                color: white;
+            }
+            
+            .search-input::placeholder {
+                color: #b0bec5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ======================================
+         هدر ثابت بالای صفحه
+         شامل عنوان، لوگو و نام کاربر
+    ====================================== -->
+    <header class="header">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="main-title">
+            تحلیل نرم افزار تعمیرات و نگهداری
+        </div>
+        
+        <div class="logo-container">
+            <div class="user-name">Vahdat Nori</div>
+            <img src="https://imgur.com/9k6VVDF.png" alt="Logo" class="logo">
+        </div>
+    </header>
+    
+    <!-- ======================================
+         کانتینر اصلی: شامل سایدبار و محتوای اصلی
+    ====================================== -->
+    <div class="container" id="container">
+        <!-- ======================================
+             سایدبار: منوی اصلی و زیرمنوها
+        ====================================== -->
+        <aside class="sidebar" id="sidebar">
+            <!-- هدر سایدبار: جستجو و دکمه فشرده -->
+            <div class="sidebar-header">
+                <input type="text" class="search-input" placeholder="جستجو..." id="searchInput">
+                <button class="compact-toggle" id="compactToggle" title="فشرده/گسترده">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+            </div>
+            
+            <!-- ======================================
+                 آیتم‌های اصلی منو
+            ====================================== -->
+            <div class="menu-section">
+                <!-- تعمیرات اصطرایی -->
+                <div class="menu-item" data-content="emergency">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span class="menu-text">تعمیرات اصطرایی</span>
+                    <span class="menu-counter">5</span>
+                </div>
+                
+                <!-- تعمیرات پیشگیرانه -->
+                <div class="menu-item" data-content="preventive">
+                    <i class="fas fa-tools"></i>
+                    <span class="menu-text">تعمیرات پیشگیرانه</span>
+                    <span class="menu-counter">12</span>
+                </div>
+                
+                <!-- شاخص ها -->
+                <div class="menu-item" data-content="indicators">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="menu-text">شاخص ها</span>
+                    <span class="menu-counter">8</span>
+                </div>
+                
+                <!-- گزارشات -->
+                <div class="menu-item" data-content="reports">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="menu-text">گزارشات</span>
+                    <span class="menu-counter">15</span>
+                </div>
+                
+                <!-- اطلاعات پایه -->
+                <div class="menu-item has-submenu" id="baseInfoToggle">
+                    <i class="fas fa-database"></i>
+                    <span class="menu-text">اطلاعات پایه</span>
+                    <span class="menu-counter">20</span>
+                    <i class="fas fa-chevron-left submenu-arrow"></i>
+                </div>
+                
+                <!-- زیرمنوی اطلاعات پایه -->
+                <div class="submenu" id="baseInfoSubmenu">
+                    <!-- محل (لوکیشن) -->
+                    <div class="submenu-item" data-content="location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>محل (لوکیشن)</span>
+                    </div>
+                    
+                    <!-- پرسنل -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-users"></i>
+                        <span>پرسنل</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="units">
+                            <i class="fas fa-building"></i>
+                            <span>واحدهای کاری (دپارتمان)</span>
+                        </div>
+                        <div class="submenu-item" data-content="positions">
+                            <i class="fas fa-user-tie"></i>
+                            <span>سمت شغلی</span>
+                        </div>
+                        <div class="submenu-item" data-content="shifts">
+                            <i class="fas fa-clock"></i>
+                            <span>شیفت کاری</span>
+                        </div>
+                        <div class="submenu-item" data-content="skills">
+                            <i class="fas fa-cogs"></i>
+                            <span>مهارت کاری</span>
+                        </div>
+                        <div class="submenu-item" data-content="certificates">
+                            <i class="fas fa-certificate"></i>
+                            <span>مدارک کاری</span>
+                        </div>
+                        <div class="submenu-item" data-content="personnel">
+                            <i class="fas fa-user"></i>
+                            <span>پرسنل</span>
+                        </div>
+                    </div>
+                    
+                    <!-- واحد های اندازه گیری -->
+                    <div class="submenu-item" data-content="measurements">
+                        <i class="fas fa-ruler"></i>
+                        <span>واحدهای اندازه گیری</span>
+                    </div>
+                    
+                    <!-- دستورالعمل -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>دستورالعمل</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="instructionTypes">
+                            <i class="fas fa-tags"></i>
+                            <span>نوع دستورالعمل</span>
+                        </div>
+                        <div class="submenu-item" data-content="instructionHistory">
+                            <i class="fas fa-history"></i>
+                            <span>تاریخچه دستورالعمل ها</span>
+                        </div>
+                        <div class="submenu-item" data-content="instructions">
+                            <i class="fas fa-file-alt"></i>
+                            <span>دستورالعمل</span>
+                        </div>
+                    </div>
+                    
+                    <!-- پیمانکاران -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-hard-hat"></i>
+                        <span>پیمانکاران</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="contractorActivities">
+                            <i class="fas fa-tasks"></i>
+                            <span>نوع فعالیت پیمانکار</span>
+                        </div>
+                        <div class="submenu-item" data-content="contractors">
+                            <i class="fas fa-user-friends"></i>
+                            <span>پیمانکار</span>
+                        </div>
+                    </div>
+                    
+                    <!-- تامین کنندگان -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-truck"></i>
+                        <span>تامین کنندگان</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="supplierTypes">
+                            <i class="fas fa-list"></i>
+                            <span>نوع تامین کنندگان</span>
+                        </div>
+                        <div class="submenu-item" data-content="suppliers">
+                            <i class="fas fa-store"></i>
+                            <span>تامین کنندگان</span>
+                        </div>
+                    </div>
+                    
+                    <!-- سازندگان -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-industry"></i>
+                        <span>سازندگان (تولیدی ها)</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="manufacturerTypes">
+                            <i class="fas fa-cubes"></i>
+                            <span>نوع سازنده</span>
+                        </div>
+                        <div class="submenu-item" data-content="manufacturers">
+                            <i class="fas fa-factory"></i>
+                            <span>سازنده</span>
+                        </div>
+                    </div>
+                    
+                    <!-- انبار -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-warehouse"></i>
+                        <span>انبار</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="warehouseTypes">
+                            <i class="fas fa-archive"></i>
+                            <span>نوع انبار</span>
+                        </div>
+                        <div class="submenu-item" data-content="warehouses">
+                            <i class="fas fa-boxes"></i>
+                            <span>انبار</span>
+                        </div>
+                    </div>
+                    
+                    <!-- قطعات -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-puzzle-piece"></i>
+                        <span>قطعات</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="partTypes">
+                            <i class="fas fa-th-large"></i>
+                            <span>نوع قطعه</span>
+                        </div>
+                        <div class="submenu-item" data-content="parts">
+                            <i class="fas fa-microchip"></i>
+                            <span>قطعه</span>
+                        </div>
+                    </div>
+                    
+                    <!-- ابزار -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-tools"></i>
+                        <span>ابزار</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="toolTypes">
+                            <i class="fas fa-toolbox"></i>
+                            <span>نوع ابزار</span>
+                        </div>
+                        <div class="submenu-item" data-content="tools">
+                            <i class="fas fa-wrench"></i>
+                            <span>ابزار</span>
+                        </div>
+                    </div>
+                    
+                    <!-- روانکار -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-oil-can"></i>
+                        <span>روانکار</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <div class="submenu-item" data-content="lubricantTypes">
+                            <i class="fas fa-flask"></i>
+                            <span>نوع روانکار</span>
+                        </div>
+                        <div class="submenu-item" data-content="lubricants">
+                            <i class="fas fa-tint"></i>
+                            <span>روانکار</span>
+                        </div>
+                    </div>
+                    
+                    <!-- اطلاعات تجهیزات -->
+                    <div class="submenu-item has-submenu">
+                        <i class="fas fa-cogs"></i>
+                        <span>اطلاعات تجهیزات</span>
+                        <i class="fas fa-chevron-left submenu-arrow"></i>
+                    </div>
+                    <div class="submenu nested-submenu">
+                        <!-- لیست تجهیزات -->
+                        <div class="submenu-item" data-content="equipmentList">
+                            <i class="fas fa-list"></i>
+                            <span>لیست تجهیزات</span>
+                        </div>
+                        
+                        <!-- گروه بندی تجهیزات -->
+                        <div class="submenu-item has-submenu">
+                            <i class="fas fa-sitemap"></i>
+                            <span>گروه بندی تجهیزات</span>
+                            <i class="fas fa-chevron-left submenu-arrow"></i>
+                        </div>
+                        <div class="submenu nested-submenu">
+                            <div class="submenu-item" data-content="subEquipmentList">
+                                <i class="fas fa-list-ul"></i>
+                                <span>لیست زیر تجهیزات</span>
+                            </div>
+                            <div class="submenu-item has-submenu">
+                                <i class="fas fa-object-group"></i>
+                                <span>گروه بندی زیر تجهیزات</span>
+                                <i class="fas fa-chevron-left submenu-arrow"></i>
+                            </div>
+                            <div class="submenu nested-submenu">
+                                <div class="submenu-item" data-content="equipmentPartsList">
+                                    <i class="fas fa-microchip"></i>
+                                    <span>لیست قطعات تجهیزات</span>
+                                </div>
+                                <div class="submenu-item" data-content="subEquipmentPartsList">
+                                    <i class="fas fa-puzzle-piece"></i>
+                                    <span>لیست قطعات زیر تجهیزات</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- سابقه جابه جایی تجهیزات -->
+                        <div class="submenu-item" data-content="equipmentMoveHistory">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>سابقه جابه جایی تجهیزات</span>
+                        </div>
+                        
+                        <!-- سابقه جابه جایی زیر تجهیزات -->
+                        <div class="submenu-item" data-content="subEquipmentMoveHistory">
+                            <i class="fas fa-random"></i>
+                            <span>سابقه جابه جایی زیر تجهیزات</span>
+                        </div>
+                        
+                        <!-- فایل و اسناد تجهیزات -->
+                        <div class="submenu-item" data-content="equipmentDocuments">
+                            <i class="fas fa-folder-open"></i>
+                            <span>فایل و اسناد تجهیزات</span>
+                        </div>
+                        
+                        <!-- فایل و اسناد زیر تجهیزات -->
+                        <div class="submenu-item" data-content="subEquipmentDocuments">
+                            <i class="fas fa-file-archive"></i>
+                            <span>فایل و اسناد زیر تجهیزات</span>
+                        </div>
+                        
+                        <!-- کارکرد تجهیزات -->
+                        <div class="submenu-item" data-content="equipmentPerformance">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>کارکرد تجهیزات</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ویژگی های مورد نیاز فنی -->
+                <div class="menu-item" data-content="technicalFeatures">
+                    <i class="fas fa-code"></i>
+                    <span class="menu-text">ویژگی های مورد نیاز فنی</span>
+                    <span class="menu-counter">22</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- ======================================
+             محتوای اصلی: نمایش محتوای انتخاب شده
+        ====================================== -->
+        <main class="main-content" id="mainContent">
+            <div class="content-card">
+                <h1 class="content-title">داشبورد مدیریتی تعمیرات و نگهداری</h1>
+                <p class="content-description">
+                    در این بخش می‌توانید شاخص‌های کلیدی عملکرد سیستم را مشاهده و تحلیل کنید.
+                </p>
+                
+                <!-- کارت‌های خلاصه -->
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="summary-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="summary-content">
+                            <h3>تعمیرات فعال</h3>
+                            <p class="summary-number">24</p>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <h3>تعمیرات اصطرایی</h3>
+                            <p class="summary-number">5</p>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <h3>تعمیرات تکمیل شده</h3>
+                            <p class="summary-number">156</p>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="summary-content">
+                            <h3>میانگین زمان تعمیر</h3>
+                            <p class="summary-number">2.5 ساعت</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- نمودارها -->
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>آمار تعمیرات ماهانه</h3>
+                        <canvas id="maintenanceChart"></canvas>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>هزینه‌های تعمیرات</h3>
+                        <canvas id="costChart"></canvas>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>عملکرد تجهیزات</h3>
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- ======================================
+         بخش JavaScript: منطق برنامه و تعاملات
+    ====================================== -->
+    <script>
+        // ======================================
+        // مدیریت منوی موبایل (همبرگری)
+        // وظیفه: نمایش/مخفی کردن سایدبار در موبایل
+        // ======================================
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('show');
+        });
+        
+        // ======================================
+        // مدیریت حالت فشرده سایدبار
+        // وظیفه: تغییر اندازه سایدبار به حالت فشرده/گسترده
+        // ======================================
+        const compactToggle = document.getElementById('compactToggle');
+        const container = document.getElementById('container');
+        
+        compactToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('compact');
+            container.classList.toggle('compact-sidebar');
+            
+            // تغییر آیکون دکمه فشرده
+            const icon = compactToggle.querySelector('i');
+            if (sidebar.classList.contains('compact')) {
+                icon.className = 'fas fa-angle-double-right';
+            } else {
+                icon.className = 'fas fa-angle-double-left';
+            }
+        });
+        
+        // ======================================
+        // مدیریت منوی اطلاعات پایه
+        // وظیفه: باز/بسته کردن زیرمنوی اطلاعات پایه
+        // ======================================
+        const baseInfoToggle = document.getElementById('baseInfoToggle');
+        const baseInfoSubmenu = document.getElementById('baseInfoSubmenu');
+        
+        baseInfoToggle.addEventListener('click', () => {
+            baseInfoToggle.classList.toggle('active');
+            baseInfoSubmenu.classList.toggle('show');
+        });
+        
+        // ======================================
+        // مدیریت زیرمنوهای تو در تو
+        // وظیفه: باز/بسته کردن زیرمنوهای سطح دوم و سوم
+        // ======================================
+        const nestedToggles = document.querySelectorAll('.submenu-item.has-submenu');
+        
+        nestedToggles.forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation(); // جلوگیری از انتشار رویداد
+                
+                // بستن سایر زیرمنوها
+                nestedToggles.forEach(t => {
+                    if (t !== toggle) {
+                        t.classList.remove('active');
+                        const submenu = t.nextElementSibling;
+                        if (submenu && submenu.classList.contains('nested-submenu')) {
+                            submenu.classList.remove('show');
+                        }
+                    }
+                });
+                
+                // باز/بسته کردن زیرمنوی فعلی
+                toggle.classList.toggle('active');
+                const submenu = toggle.nextElementSibling;
+                if (submenu && submenu.classList.contains('nested-submenu')) {
+                    submenu.classList.toggle('show');
+                }
+            });
+        });
+        
+        // ======================================
+        // مدیریت کلیک روی آیتم‌های منو و نمایش محتوا
+        // وظیفه: نمایش محتوای مربوط به هر منو با انیمیشن
+        // ======================================
+        const menuItems = document.querySelectorAll('.menu-item:not(.has-submenu)');
+        const submenuItems = document.querySelectorAll('.submenu-item:not(.has-submenu)');
+        const mainContent = document.getElementById('mainContent');
+        
+        // ترکیب همه آیتم‌های قابل کلیک
+        const allClickableItems = [...menuItems, ...submenuItems];
+        
+        allClickableItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // حذف کلاس active از همه آیتم‌ها
+                allClickableItems.forEach(i => i.classList.remove('active'));
+                nestedToggles.forEach(t => t.classList.remove('active'));
+                
+                // اضافه کردن کلاس active به آیتم کلیک شده
+                item.classList.add('active');
+                
+                // بستن سایدبار در موبایل بعد از انتخاب
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('show');
+                }
+                
+                // دریافت محتوای مربوطه
+                const contentKey = item.getAttribute('data-content');
+                const content = contentData[contentKey];
+                
+                if (content) {
+                    let newContent;
+                    
+                    // اگر ویژگی‌های فنی بود، نمایش متفاوت
+                    if (contentKey === 'technicalFeatures') {
+                        newContent = `
+                            <div class="content-card">
+                                <h1 class="content-title">${content.title}</h1>
+                                <p class="content-description">${content.description}</p>
+                                
+                                <div class="feature-grid">
+                                    ${content.features.map(feature => `
+                                        <div class="feature-card priority-${feature.priority}">
+                                            <div class="feature-header">
+                                                <div class="feature-number">${feature.priority}</div>
+                                                <div class="feature-title">${feature.title}</div>
+                                                <div class="priority-badge">الویت ${feature.priority}</div>
+                                            </div>
+                                            <div class="feature-description">${feature.description}</div>
+                                            <div class="feature-details">
+                                                <ul>
+                                                    ${feature.details.map(detail => `<li>${detail}</li>`).join('')}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // برای سایر بخش‌ها، نمایش معمولی
+                        newContent = `
+                            <div class="content-card">
+                                <h1 class="content-title">${content.title}</h1>
+                                <p class="content-description">${content.description}</p>
+                                
+                                <div class="info-cards">
+                                    ${content.features.map(feature => `
+                                        <div class="info-card">
+                                            <i class="fas fa-check-circle"></i>
+                                            <h3>ویژگی</h3>
+                                            <p>${feature}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // جایگزینی محتوا با انیمیشن
+                    mainContent.style.opacity = '0';
+                    setTimeout(() => {
+                        mainContent.innerHTML = newContent;
+                        mainContent.style.opacity = '1';
+                    }, 300);
+                }
+            });
+        });
+        
+        // ======================================
+        // قابلیت جستجو در منوها
+        // وظیفه: فیلتر کردن منوها بر اساس متن جستجو
+        // ======================================
+        const searchInput = document.getElementById('searchInput');
+        
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            // جستجو در تمام آیتم‌های منو
+            allClickableItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                const parent = item.closest('.menu-item, .submenu-item');
+                
+                if (text.includes(searchTerm)) {
+                    parent.style.display = 'flex';
+                    
+                    // نمایش منوهای والد در صورت وجود
+                    let parentMenu = parent.parentElement;
+                    while (parentMenu) {
+                        if (parentMenu.classList.contains('submenu') || parentMenu.classList.contains('nested-submenu')) {
+                            parentMenu.classList.add('show');
+                            const toggle = parentMenu.previousElementSibling;
+                            if (toggle && toggle.classList.contains('has-submenu')) {
+                                toggle.classList.add('active');
+                            }
+                        }
+                        parentMenu = parentMenu.parentElement;
+                    }
+                } else {
+                    parent.style.display = 'none';
+                }
+            });
+            
+            // اگر جستجو خالی بود، همه را نمایش بده
+            if (searchTerm === '') {
+                allClickableItems.forEach(item => {
+                    item.closest('.menu-item, .submenu-item').style.display = 'flex';
+                });
+                
+                // بستن همه زیرمنوها
+                document.querySelectorAll('.submenu, .nested-submenu').forEach(submenu => {
+                    submenu.classList.remove('show');
+                });
+                document.querySelectorAll('.has-submenu').forEach(toggle => {
+                    toggle.classList.remove('active');
+                });
+            }
+        });
+        
+        // ======================================
+        // ایجاد نمودارهای داشبورد
+        // وظیفه: رسم نمودارهای تعاملی در صفحه اصلی
+        // ======================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // نمودار آمار تعمیرات ماهانه
+            const maintenanceCtx = document.getElementById('maintenanceChart').getContext('2d');
+            new Chart(maintenanceCtx, {
+                type: 'line',
+                data: {
+                    labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
+                    datasets: [{
+                        label: 'تعمیرات پیشگیرانه',
+                        data: [12, 19, 15, 25, 22, 30],
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'تعمیرات اصطرایی',
+                        data: [5, 8, 6, 10, 7, 12],
+                        borderColor: '#f44336',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // نمودار هزینه‌های تعمیرات
+            const costCtx = document.getElementById('costChart').getContext('2d');
+            new Chart(costCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['قطعات', 'پرسنل', 'پیمانکاران', 'سایر'],
+                    datasets: [{
+                        label: 'هزینه (میلیون تومان)',
+                        data: [45, 30, 25, 15],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // نمودار عملکرد تجهیزات
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            new Chart(performanceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['عالی', 'خوب', 'متوسط', 'ضعیف'],
+                    datasets: [{
+                        data: [45, 30, 20, 5],
+                        backgroundColor: [
+                            'rgba(76, 175, 80, 0.7)',
+                            'rgba(33, 150, 243, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(244, 67, 54, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(76, 175, 80, 1)',
+                            'rgba(33, 150, 243, 1)',
+                            'rgba(255, 193, 7, 1)',
+                            'rgba(244, 67, 54, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        });
+        
+        // ======================================
+        // انیمیشن لوگو
+        // وظیفه: اجرای انیمیشن پالس هنگام کلیک روی لوگو
+        // ======================================
+        const logo = document.querySelector('.logo');
+        logo.addEventListener('click', () => {
+            logo.style.animation = 'none';
+            setTimeout(() => {
+                logo.style.animation = 'pulse 2s infinite';
+            }, 10);
+			
+		// این کد رو اضافه کن - بازگشت به داشبورد
+            location.reload(); // یا می‌تونی از تابعی که داشبورد رو لود می‌کنه استفاده کنی
+        });
+        
+        // ======================================
+        // داده‌های محتوای صفحات
+        // وظیفه: تعریف محتوای هر بخش برای نمایش
+        // ======================================
+        const contentData = {
+            emergency: {
+                title: 'تعمیرات اصطرایی',
+                description: 'مدیریت تعمیرات فوری و غیرمنتظره تجهیزات و ماشین‌آلات',
+                features: [
+                    'ثبت درخواست‌های فوری',
+                    'اولویت‌بندی تعمیرات',
+                    'تخصیص سریع پرسنل',
+                    'پیگیری وضعیت تعمیر',
+                    'گزارش‌گیری علت خرابی'
+                ]
+            },
+            preventive: {
+                title: 'تعمیرات پیشگیرانه',
+                description: 'برنامه‌ریزی و اجرای تعمیرات دوره‌ای برای جلوگیری از خرابی‌ها',
+                features: [
+                    'تعریف برنامه‌های زمانی',
+                    'چک‌لیست‌های بازرسی',
+                    'مدیریت منابع مصرفی',
+                    'پیگیری اجرای برنامه',
+                    'تحلیل اثربخشی برنامه'
+                ]
+            },
+            indicators: {
+                title: 'شاخص‌های کلیدی عملکرد',
+                description: 'مانیتورینگ و تحلیل شاخص‌های عملکردی سیستم تعمیرات',
+                features: [
+                    'شاخص MTBF (میانگین زمان بین خرابی‌ها)',
+                    'شاخص MTTR (میانگین زمان تعمیر)',
+                    'شاخص OEE (اثربخشی کلی تجهیزات)',
+                    'شاخص هزینه تعمیرات',
+                    'شاخص در دسترس بودن تجهیزات'
+                ]
+            },
+            reports: {
+                title: 'گزارشات تحلیلی',
+                description: 'تولید گزارش‌های مدیریتی و تحلیلی از عملکرد سیستم',
+                features: [
+                    'گزارش عملکرد ماهانه',
+                    'گزارش هزینه‌های تعمیرات',
+                    'گزارش مصرف قطعات یدکی',
+                    'گزارش عملکرد پرسنل',
+                    'داشبورد مدیریتی'
+                ]
+            },
+            location: {
+                title: 'مدیریت محل‌ها (لوکیشن‌ها)',
+                description: 'ثبت و مدیریت تمامی محل‌های فیزیکی سازمان شامل کارخانه‌ها، ساختمان‌ها، واحدها و...',
+                features: [
+                    'ثبت موقعیت جغرافیایی',
+                    'نقشه‌های محل‌ها',
+                    'سطح‌بندی محل‌ها',
+                    'تخصیص تجهیزات به محل‌ها'
+                ]
+            },
+            personnel: {
+                title: 'مدیریت پرسنل',
+                description: 'ثبت اطلاعات کامل پرسنل فنی و اداری مرتبط با فرآیندهای تعمیرات و نگهداری',
+                features: [
+                    'اطلاعات فردی و شغلی',
+                    'سوابق کاری',
+                    'مهارت‌های تخصصی',
+                    'مدارک و گواهینامه‌ها'
+                ]
+            },
+            units: {
+                title: 'واحدهای کاری (دپارتمان‌ها)',
+                description: 'تعریف ساختار سازمانی و واحدهای کاری مختلف',
+                features: [
+                    'ساختار درختی سازمان',
+                    'مدیریت سطوح مختلف',
+                    'تخصیص پرسنل به واحدها',
+                    'تعریف مسئولیت‌ها'
+                ]
+            },
+            positions: {
+                title: 'سمت‌های شغلی',
+                description: 'تعریف پست‌های سازمانی و سمت‌های شغلی مختلف',
+                features: [
+                    'مشخصات شغلی',
+                    'نیازمندی‌های هر سمت',
+                    'سطح دسترسی',
+                    'گزارش‌گیری بر اساس سمت'
+                ]
+            },
+            shifts: {
+                title: 'شیفت‌های کاری',
+                description: 'مدیریت شیفت‌های کاری و برنامه‌های زمانی',
+                features: [
+                    'تعریف شیفت‌ها',
+                    'برنامه‌ریزی شیفت‌ها',
+                    'گزارش حضور و غیاب',
+                    'تخصیص پرسنل به شیفت‌ها'
+                ]
+            },
+            skills: {
+                title: 'مهارت‌های کاری',
+                description: 'ثبت و مدیریت مهارت‌های تخصصی مورد نیاز برای پرسنل',
+                features: [
+                    'دسته‌بندی مهارت‌ها',
+                    'سطح‌بندی مهارت‌ها',
+                    'ارزیابی مهارت‌ها',
+                    'گزارش مهارت‌های پرسنل'
+                ]
+            },
+            certificates: {
+                title: 'مدارک کاری',
+                description: 'مدیریت مدارک و گواهینامه‌های فنی پرسنل',
+                features: [
+                    'ثبت مدارک',
+                    'پیگیری تاریخ انقضا',
+                    'یادآوری تمدید مدارک',
+                    'گزارش مدارک معتبر'
+                ]
+            },
+            measurements: {
+                title: 'واحدهای اندازه‌گیری',
+                description: 'تعریف واحدهای اندازه‌گیری استاندارد در سیستم',
+                features: [
+                    'واحدهای طول، وزن، حجم',
+                    'واحدهای فشار، دما',
+                    'واحدهای زمان',
+                    'تبدیل بین واحدها'
+                ]
+            },
+            instructionTypes: {
+                title: 'انواع دستورالعمل‌ها',
+                description: 'دسته‌بندی انواع دستورالعمل‌های فنی و مدیریتی',
+                features: [
+                    'دستورالعمل‌های ایمنی',
+                    'دستورالعمل‌های فنی',
+                    'دستورالعمل‌های عملیاتی',
+                    'دستورالعمل‌های اضطراری'
+                ]
+            },
+            instructionHistory: {
+                title: 'تاریخچه دستورالعمل‌ها',
+                description: 'پیگیری تغییرات و نسخه‌های مختلف دستورالعمل‌ها',
+                features: [
+                    'ثبت نسخه‌های مختلف',
+                    'پیگیری تغییرات',
+                    'تاریخچه بازبینی‌ها',
+                    'مقایسه نسخه‌ها'
+                ]
+            },
+            instructions: {
+                title: 'مدیریت دستورالعمل‌ها',
+                description: 'ایجاد و مدیریت دستورالعمل‌های استاندارد عملیات (SOP)',
+                features: [
+                    'ایجاد دستورالعمل‌های گام به گام',
+                    'ضمیمه فایل‌ها و تصاویر',
+                    'تایید و انتشار',
+                    'دسترسی آسان پرسنل'
+                ]
+            },
+            contractorActivities: {
+                title: 'انواع فعالیت‌های پیمانکاران',
+                description: 'دسته‌بندی فعالیت‌های مختلفی که پیمانکاران انجام می‌دهند',
+                features: [
+                    'فعالیت‌های تعمیراتی',
+                    'فعالیت‌های نصب',
+                    'فعالیت‌های بازرسی',
+                    'فعالیت‌های تخصصی'
+                ]
+            },
+            contractors: {
+                title: 'مدیریت پیمانکاران',
+                description: 'ثبت اطلاعات پیمانکاران و شرکت‌های خدماتی',
+                features: [
+                    'اطلاعات تماس',
+                    'مجوزها و گواهینامه‌ها',
+                    'سابقه کاری',
+                    'ارزیابی عملکرد'
+                ]
+            },
+            supplierTypes: {
+                title: 'انواع تامین کنندگان',
+                description: 'دسته‌بندی تامین کنندگان بر اساس نوع محصولات و خدمات',
+                features: [
+                    'تامین کنندگان قطعات',
+                    'تامین کنندگان مواد مصرفی',
+                    'تامین کنندگان خدمات',
+                    'تامین کنندگان تجهیزات'
+                ]
+            },
+            suppliers: {
+                title: 'مدیریت تامین کنندگان',
+                description: 'ثبت و مدیریت اطلاعات تامین کنندگان مواد و تجهیزات',
+                features: [
+                    'اطلاعات شرکت',
+                    'لیست محصولات',
+                    'شرایط پرداخت',
+                    'ارزیابی کیفیت'
+                ]
+            },
+            manufacturerTypes: {
+                title: 'انواع سازندگان',
+                description: 'دسته‌بندی سازندگان تجهیزات و ماشین‌آلات',
+                features: [
+                    'سازندگان داخلی',
+                    'سازندگان خارجی',
+                    'سازندگان تجهیزات سنگین',
+                    'سازندگان قطعات یدکی'
+                ]
+            },
+            manufacturers: {
+                title: 'مدیریت سازندگان',
+                description: 'ثبت اطلاعات سازندگان اصلی تجهیزات',
+                features: [
+                    'اطلاعات فنی',
+                    'کاتالوگ محصولات',
+                    'نمایندگی‌ها',
+                    'پشتیبانی فنی'
+                ]
+            },
+            warehouseTypes: {
+                title: 'انواع انبارها',
+                description: 'دسته‌بندی انبارها بر اساس نوع مواد و تجهیزات',
+                features: [
+                    'انبار قطعات یدکی',
+                    'انبار مواد مصرفی',
+                    'انبار ابزارآلات',
+                    'انبار مواد شیمیایی'
+                ]
+            },
+            warehouses: {
+                title: 'مدیریت انبارها',
+                description: 'ثبت و مدیریت انبارهای سازمان و موجودی‌ها',
+                features: [
+                    'اطلاعات انبار',
+                    'موقعیت‌های انبار',
+                    'ظرفیت انبار',
+                    'مدیریت موجودی'
+                ]
+            },
+            partTypes: {
+                title: 'انواع قطعات',
+                description: 'دسته‌بندی قطعات یدکی و مصرفی',
+                features: [
+                    'قطعات مکانیکی',
+                    'قطعات الکتریکی',
+                    'قطعات الکترونیکی',
+                    'مواد مصرفی'
+                ]
+            },
+            parts: {
+                title: 'مدیریت قطعات',
+                description: 'ثبت و مدیریت قطعات یدکی و مصرفی',
+                features: [
+                    'کدگذاری قطعات',
+                    'مشخصات فنی',
+                    'مدیریت موجودی',
+                    'پیگیری مصرف'
+                ]
+            },
+            toolTypes: {
+                title: 'انواع ابزارها',
+                description: 'دسته‌بندی ابزارهای مورد استفاده در تعمیرات',
+                features: [
+                    'ابزارهای دستی',
+                    'ابزارهای برقی',
+                    'ابزارهای اندازه‌گیری',
+                    'ابزارهای تخصصی'
+                ]
+            },
+            tools: {
+                title: 'مدیریت ابزارها',
+                description: 'ثبت و مدیریت ابزارآلات و تجهیزات تست',
+                features: [
+                    'کدگذاری ابزارها',
+                    'کالیبراسیون',
+                    'مدیریت امانت',
+                    'پیگیری وضعیت'
+                ]
+            },
+            lubricantTypes: {
+                title: 'انواع روانکارها',
+                description: 'دسته‌بندی روغن‌ها و گریس‌های صنعتی',
+                features: [
+                    'روغن‌های موتور',
+                    'روغن‌های هیدرولیک',
+                    'گریس‌های صنعتی',
+                    'روانکارهای خاص'
+                ]
+            },
+            lubricants: {
+                title: 'مدیریت روانکارها',
+                description: 'ثبت و مدیریت مواد روانکاری و روغن‌ها',
+                features: [
+                    'مشخصات فنی',
+                    'مدیریت موجودی',
+                    'برنامه روانکاری',
+                    'پیگیری مصرف'
+                ]
+            },
+            equipmentList: {
+                title: 'لیست تجهیزات',
+                description: 'مدیریت و مشاهده تمامی تجهیزات ثبت شده در سیستم',
+                features: [
+                    'ثبت اطلاعات تجهیزات',
+                    'مشخصات فنی تجهیزات',
+                    'وضعیت فعلی تجهیزات',
+                    'تاریخچه نگهداری',
+                    'گزارش‌گیری از تجهیزات'
+                ]
+            },
+            subEquipmentList: {
+                title: 'لیست زیر تجهیزات',
+                description: 'مدیریت زیرمجموعه‌های هر تجهیز و اجزای تشکیل دهنده',
+                features: [
+                    'ثبت زیر تجهیزات',
+                    'ارتباط با تجهیز اصلی',
+                    'مشخصات فنی زیر تجهیزات',
+                    'مدیریت مکان زیر تجهیزات',
+                    'گزارش‌گیری از زیر تجهیزات'
+                ]
+            },
+            equipmentPartsList: {
+                title: 'لیست قطعات تجهیزات',
+                description: 'مدیریت قطعات یدکی و مصرفی مرتبط با هر تجهیز',
+                features: [
+                    'ثبت قطعات اختصاصی',
+                    'لینک به انبار قطعات',
+                    'مدیریت مصرف قطعات',
+                    'هشدار موجودی قطعات',
+                    'گزارش مصرف قطعات'
+                ]
+            },
+            subEquipmentPartsList: {
+                title: 'لیست قطعات زیر تجهیزات',
+                description: 'مدیریت قطعات اختصاصی زیر تجهیزات',
+                features: [
+                    'ثبت قطعات زیر تجهیزات',
+                    'پیگیری مصرف قطعات',
+                    'مدیریت موجودی',
+                    'هشدارهای مصرف',
+                    'گزارش‌گیری تخصصی'
+                ]
+            },
+            equipmentMoveHistory: {
+                title: 'سابقه جابه جایی تجهیزات',
+                description: 'پیگیری کامل تاریخچه جابه‌جایی‌های تجهیزات',
+                features: [
+                    'ثبت جابه‌جایی‌ها',
+                    'تاریخچه مکان‌ها',
+                    'دلیل جابه‌جایی',
+                    'تایید کننده جابه‌جایی',
+                    'گزارش جابه‌جایی‌ها'
+                ]
+            },
+            subEquipmentMoveHistory: {
+                title: 'سابقه جابه جایی زیر تجهیزات',
+                description: 'پیگیری جابه‌جایی‌های زیر تجهیزات',
+                features: [
+                    'ثبت جابه‌جایی زیر تجهیزات',
+                    'پیگیری دقیق مکان‌ها',
+                    'مدیریت مجوزها',
+                    'گزارش‌های تفصیلی',
+                    'تحلیل الگوهای جابه‌جایی'
+                ]
+            },
+            equipmentDocuments: {
+                title: 'فایل و اسناد تجهیزات',
+                description: 'مدیریت اسناد و فایل‌های مرتبط با تجهیزات',
+                features: [
+                    'آپلود دستورالعمل‌ها',
+                    'مدیریت نقشه‌ها',
+                    'ثبت گواهینامه‌ها',
+                    'نسخه‌بندی اسناد',
+                    'دسترسی کنترل شده'
+                ]
+            },
+            subEquipmentDocuments: {
+                title: 'فایل و اسناد زیر تجهیزات',
+                description: 'مدیریت اسناد تخصصی زیر تجهیزات',
+                features: [
+                    'آپلود اسناد فنی',
+                    'مدیریت دیاگرام‌ها',
+                    'ثبت گزارش‌های تست',
+                    'پیگیری بازبینی‌ها',
+                    'آرشیو اسناد'
+                ]
+            },
+            equipmentPerformance: {
+                title: 'کارکرد تجهیزات',
+                description: 'مانیتورینگ و تحلیل عملکرد تجهیزات',
+                features: [
+                    'ثبت ساعات کارکرد',
+                    'تحلیل OEE',
+                    'پایش شاخص‌های عملکرد',
+                    'هشدارهای عملکردی',
+                    'گزارش‌های تحلیلی'
+                ]
+            },
+            technicalFeatures: {
+                title: 'ویژگی‌های فنی مورد نیاز نرم افزار تعمیرات و نگهداری',
+                description: 'لیست ویژگی‌های فنی و برنامه‌نویسی با الویت‌بندی دقیق برای توسعه یک سیستم حرفه‌ای',
+                features: [
+                    {
+                        priority: 1,
+                        title: 'سیستم آرام متناسب با توضیحات کافی',
+                        description: 'معماری پایدار و مستندات کامل برای توسعه و نگهداری آسان',
+                        details: [
+                            'معماری Microservices برای مقیاس‌پذیری',
+                            'مستندات کامل API با Swagger/OpenAPI',
+                            'Logging جامع با سطوح مختلف',
+                            'مدیریت خطاها و Exception Handling پیشرفته'
+                        ]
+                    },
+                    {
+                        priority: 1,
+                        title: 'سیستم ذخیره فعالیت کاربرا',
+                        description: 'ثبت و پیگیری تمام اقدامات کاربران با جزئیات کامل',
+                        details: [
+                            'Audit Log برای تمام عملیات کاربران',
+                            'ثبت تغییرات با جزئیات کامل',
+                            'امکان بازیابی وضعیت‌های قبلی',
+                            'گزارش‌گیری از فعالیت‌ها با فیلترهای پیشرفته'
+                        ]
+                    },
+                    {
+                        priority: 1,
+                        title: 'قدرت اتصال به نرم افزار ها دیگه',
+                        description: 'API قدرتمند برای یکپارچه‌سازی با سیستم‌های دیگر',
+                        details: [
+                            'RESTful API با استانداردهای OAuth 2.0',
+                            'پشتیبانی از WebSocket برای ارتباطات Real-time',
+                            'Integration با سیستم‌های مالی (ERP)',
+                            'پشتیبانی از Message Queues (RabbitMQ, Kafka)'
+                        ]
+                    },
+                    {
+                        priority: 1,
+                        title: 'امکان آفلاین کارکردن و سینک اطلاعات',
+                        description: 'کار آفلاین و همگام‌سازی هوشمند داده‌ها',
+                        details: [
+                            'Service Worker برای پشتیبانی آفلاین',
+                            'IndexedDB برای ذخیره‌سازی محلی داده‌ها',
+                            'الگوریتم‌های همگام‌سازی هوشمند',
+                            'قابلیت کار در حالت آفلاین با ذخیره موقت تغییرات'
+                        ]
+                    },
+                    {
+                        priority: 2,
+                        title: 'خروجی های مناسب اکسل و PDF',
+                        description: 'تولید گزارش‌های حرفه‌ای با فرمت‌های استاندارد',
+                        details: [
+                            'کتابخانه‌های قدرتمند برای تولید گزارش‌ها',
+                            'قالب‌های قابل سفارشی‌سازی',
+                            'خروجی Batch برای حجم بالای داده‌ها',
+                            'پشتیبانی از RTL برای گزارش‌های فارسی'
+                        ]
+                    },
+                    {
+                        priority: 2,
+                        title: 'قابلیت گزارش گیری پیشرفته',
+                        description: 'موتور گزارش‌نویسی قدرتمند با قابلیت‌های پیشرفته',
+                        details: [
+                            'موتور گزارش‌نویسی قدرتمند',
+                            'امکان طراحی گزارش‌های دلخواه توسط کاربر',
+                            'کش کردن گزارش‌های پرتکرار',
+                            'خروجی‌های多种格式 (Excel, PDF, CSV, HTML)'
+                        ]
+                    },
+                    {
+                        priority: 2,
+                        title: 'مدیریت دارایی و تجهیزات',
+                        description: 'سیستم جامع مدیریت دارایی و تجهیزات',
+                        details: [
+                            'ساختار داده‌های درختی برای تجهیزات',
+                            'ردیابی lifecycle کامل تجهیزات',
+                            'مدیریت مکانی تجهیزات با GPS Integration',
+                            'محاسبه اتوماتیک هزینه‌های نگهداری'
+                        ]
+                    },
+                    {
+                        priority: 2,
+                        title: 'پشتیبانی از پایگاه داده های مختلف',
+                        description: 'انعطاف‌پذیری در انتخاب پایگاه داده',
+                        details: [
+                            'پشتیبانی از SQL (MySQL, PostgreSQL, SQL Server)',
+                            'پشتیبانی از NoSQL (MongoDB, Redis)',
+                            'Connection Pooling برای مدیریت بهینه اتصالات',
+                            'Migration Tools برای انتقال داده‌ها'
+                        ]
+                    },
+                    {
+                        priority: 3,
+                        title: 'برنامه ریزی تعمیرات پیشگیرانه',
+                        description: 'سیستم هوشمند زمان‌بندی تعمیرات',
+                        details: [
+                            'موتور زمان‌بندی پیشرفته',
+                            'الگوریتم‌های هوشمند برای پیش‌بینی خرابی‌ها',
+                            'محاسبه MTBF و MTTR به صورت خودکار',
+                            'ارسال نوتیفیکیشن‌های زمان‌بندی شده'
+                        ]
+                    },
+                    {
+                        priority: 3,
+                        title: 'مدیریت قطعات یدکی',
+                        description: 'سیستم جامع مدیریت قطعات یدکی',
+                        details: [
+                            'سیستم مدیریت موجودی با FIFO/LIFO',
+                            'هشدارهای هوشمند برای کمبود موجودی',
+                            'محاسبه Economic Order Quantity (EOQ)',
+                            'ردیابی سریال‌های قطعات'
+                        ]
+                    },
+                    {
+                        priority: 3,
+                        title: 'مدیریت پرسنل و مهارت‌ها',
+                        description: 'سیستم جامع مدیریت منابع انسانی',
+                        details: [
+                            'سیستم مدیریت دسترسی‌ها (RBAC)',
+                            'matrix مهارت‌ها و تخصص‌ها',
+                            'الگوریتم‌های تخصیص بهینه پرسنل',
+                            'سیستم ارزیابی عملکرد پرسنل'
+                        ]
+                    },
+                    {
+                        priority: 3,
+                        title: 'معماری ماژولار برای توسعه آسان',
+                        description: 'ساختار ماژولار برای توسعه و نگهداری آسان',
+                        details: [
+                            'Plugin Architecture برای افزودن قابلیت‌ها',
+                            'Dependency Injection برای مدیریت وابستگی‌ها',
+                            'Event-Driven Architecture برای ارتباط بین ماژول‌ها',
+                            'قابلیت Hot Deployment بدون نیاز به ری‌استارت'
+                        ]
+                    },
+                    {
+                        priority: 4,
+                        title: 'قابلیت تعریف گردش کار کاری',
+                        description: 'سیستم قدرتمند مدیریت گردش کار',
+                        details: [
+                            'Workflow Engine قدرتمند',
+                            'طراحی گرافیکی فرآیندها (Drag & Drop)',
+                            'Business Rule Engine برای مدیریت قوانین',
+                            'Integration با سیستم‌های BPM'
+                        ]
+                    },
+                    {
+                        priority: 4,
+                        title: 'پشتیبانی از موبایل',
+                        description: 'تجربه کاربری عالی در دستگاه‌های موبایل',
+                        details: [
+                            'Responsive Design برای تمام دستگاه‌ها',
+                            'Progressive Web App (PWA) برای نصب روی موبایل',
+                            'Push Notifications برای اطلاع‌رسانی فوری',
+                            'Offline Sync با قابلیت Conflict Resolution'
+                        ]
+                    },
+                    {
+                        priority: 4,
+                        title: 'داشبورد مدیریتی',
+                        description: 'داشبورد تعاملی برای مدیریت بهینه',
+                        details: [
+                            'Real-time Dashboard با WebSocket',
+                            'نمودارهای تعاملی با D3.js یا Chart.js',
+                            'Customizable Widgets برای شخصی‌سازی',
+                            'Export Dashboard به صورت تصویر یا PDF'
+                        ]
+                    },
+                    {
+                        priority: 4,
+                        title: 'سیستم کش برای افزایش سرعت',
+                        description: 'سیستم کش چندلایه برای بهینه‌سازی عملکرد',
+                        details: [
+                            'Multi-level Caching (Browser, CDN, Server)',
+                            'Redis برای کش داده‌های پرتکرار',
+                            'Cache Invalidation هوشمند',
+                            'CDN برای محتوای استاتیک'
+                        ]
+                    },
+                    {
+                        priority: 5,
+                        title: 'هشدارها و نوتیفیکیشن‌ها',
+                        description: 'سیستم جامع اطلاع‌رسانی و هشدار',
+                        details: [
+                            'Notification Gateway با پشتیبانی از چندین کانال',
+                            'Template Engine برای پیام‌های شخصی‌سازی شده',
+                            'قابلیت تعریف Rule-based Alerts',
+                            'Integration با سیستم‌های پیامک و ایمیل'
+                        ]
+                    },
+                    {
+                        priority: 5,
+                        title: 'امنیت داده‌ها',
+                        description: 'سیستم امنیتی پیشرفته برای حفاظت از داده‌ها',
+                        details: [
+                            'Encryption در حالت Rest و Transit',
+                            'JWT برای احراز هویت',
+                            'Rate Limiting برای جلوگیری از حملات',
+                            'Security Headers و CSP'
+                        ]
+                    },
+                    {
+                        priority: 5,
+                        title: 'پشتیبان گیری و بازیابی',
+                        description: 'سیستم پشتیبان‌گیری اتوماتیک و مطمئن',
+                        details: [
+                            'Automated Backup با زمان‌بندی منظم',
+                            'Point-in-Time Recovery',
+                            'Encryption برای فایل‌های پشتیبان',
+                            'Test Recovery برای اطمینان از صحت پشتیبان‌ها'
+                        ]
+                    },
+                    {
+                        priority: 5,
+                        title: 'پشتیبانی از چند زبان',
+                        description: 'سیستم چندزبانه کامل',
+                        details: [
+                            'i18n با پشتیبانی از RTL',
+                            'Dynamic Language Switching',
+                            'مدیریت ترجمه‌ها در دیتابیس',
+                            'پشتیبانی از Date/Time Localization'
+                        ]
+                    },
+                    {
+                        priority: 5,
+                        title: 'قابلیت شخصی‌سازی رابط کاربری',
+                        description: 'امکان شخصی‌سازی کامل رابط کاربری',
+                        details: [
+                            'Theme Engine برای تغییر ظاهر',
+                            'Drag & Drop برای چیدمان دلخواه',
+                            'User Preferences ذخیره شده در Profile',
+                            'Customizable Forms و Fields'
+                        ]
+                    },
+                    {
+                        priority: 5,
+                        title: 'پشتیبانی از API نسخه‌های مختلف',
+                        description: 'مدیریت نسخه‌های مختلف API',
+                        details: [
+                            'Versioning برای API (v1, v2, ...)',
+                            'Backward Compatibility',
+                            'Deprecation Policy برای نسخه‌های قدیمی',
+                            'Documentation برای هر نسخه'
+                        ]
+                    }
+                ]
+            }
+        };
+    </script>
+</body>
+</html>
